@@ -6,7 +6,6 @@ on:
 jobs:
     build-and-push:
         runs-on: ubuntu-latest
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}    # condition if we oush from another branch this steps will not run
         steps:
            - name: checkout the code 
              uses: actions/checkout@v4     # checked out 
