@@ -36,6 +36,3 @@ jobs:
           tags: |
             ${{ vars.DOCKERHUB_USERNAME }}/github-actions-practice-2:latest
             ${{ vars.DOCKERHUB_USERNAME }}/github-actions-practice-2:${{ github.sha }}
-uses:         ← step level
-with:         ← step level (same as uses!)
-  username:   ← inside with (2 spaces inside)
