@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TaskFlow — CI/CD Practice App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --border: #1e1e2e;
+      --accent: #7c3aed;
+      --accent2: #06b6d4;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --pending: #f59e0b;
+      --done: #10b981;
+      --danger: #ef4444;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+      background-size: 40px 40px; pointer-events: none; z-index: 0;
+    }
+    header { position: sticky; top: 0; z-index: 10; background: rgba(10,10,15,0.85); backdrop-filter: blur(16px); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-family: 'Space Mono', monospace; font-size: 1.25rem; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .badge { font-family: 'Space Mono', monospace; font-size: 0.65rem; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--accent); color: var(--accent); letter-spacing: 0.08em; }
+    .container { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+    .hero { text-align: center; margin-bottom: 3rem; animation: fadeUp 0.6s ease both; }
+    .hero h1 { font-family: 'Space Mono', monospace; font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1.15; margin-bottom: 0.75rem; }
+    .hero h1 span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { color: var(--muted); font-size: 0.95rem; }
+    .add-form { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; animation: fadeUp 0.6s 0.1s ease both; }
+    .add-form h2 { font-family: 'Space Mono', monospace; font-size: 0.8rem; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; margin-bottom: 1rem; }
+    .form-row { display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; margin-bottom: 0.75rem; }
+    input[type="text"], textarea { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 0.65rem 1rem; width: 100%; outline: none; transition: border-color 0.2s; }
+    input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 70px; display: block; }
+    .btn { padding: 0.65rem 1.4rem; border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #5b21b6); color: #fff; }
+    .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+    .task-list { display: flex; flex-direction: column; gap: 1rem; animation: fadeUp 0.6s 0.2s ease both; }
+    .task-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem 1.4rem; display: flex; align-items: flex-start; gap: 1rem; transition: border-color 0.2s, transform 0.2s; }
+    .task-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .task-card.done { opacity: 0.55; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .status-dot.pending { background: var(--pending); box-shadow: 0 0 8px var(--pending); }
+    .status-dot.done { background: var(--done); box-shadow: 0 0 8px var(--done); }
+    .task-body { flex: 1; }
+    .task-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem; }
+    .task-desc { color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .task-meta { font-family: 'Space Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+    .task-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+    .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.78rem; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text); cursor: pointer; transition: all 0.15s; }
+    .btn-sm:hover { background: var(--border); }
+    .btn-sm.complete { border-color: var(--done); color: var(--done); }
+    .btn-sm.complete:hover { background: rgba(16,185,129,0.1); }
+    .btn-sm.delete { border-color: var(--danger); color: var(--danger); }
+    .btn-sm.delete:hover { background: rgba(239,68,68,0.1); }
+    .empty { text-align: center; padding: 3rem; color: var(--muted); font-family: 'Space Mono', monospace; font-size: 0.85rem; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚡ TaskFlow</div>
+  <span class="badge">Flask + PostgreSQL</span>
+</header>
+
+<div class="container">
+  <div class="hero">
+    <h1>Your <span>CI/CD</span> Practice App</h1>
+    <p>Built with Python Flask · PostgreSQL · Docker · GitHub Actions</p>
+  </div>
+
+  <div class="add-form">
+    <h2>// New Task</h2>
+    <div class="form-row">
+      <input type="text" id="taskTitle" placeholder="Task title..." />
+      <button class="btn btn-primary" onclick="addTask()">+ Add</button>
+    </div>
+    <textarea id="taskDesc" placeholder="Description (optional)..."></textarea>
+  </div>
+
+  <div class="task-list" id="taskList">
+    {% if tasks %}
+      {% for task in tasks %}
+      <div class="task-card {{ 'done' if task.status == 'done' else '' }}" id="task-{{ task.id }}">
+        <div class="status-dot {{ task.status }}"></div>
+        <div class="task-body">
+          <div class="task-title">{{ task.title }}</div>
+          {% if task.description %}
+          <div class="task-desc">{{ task.description }}</div>
+          {% endif %}
+          <div class="task-meta">{{ task.created_at.strftime('%Y-%m-%d %H:%M') }} · {{ task.status }}</div>
+        </div>
+        <div class="task-actions">
+          {% if task.status == 'pending' %}
+          <button class="btn-sm complete" onclick="completeTask({{ task.id }})">✓ Done</button>
+          {% endif %}
+          <button class="btn-sm delete" onclick="deleteTask({{ task.id }})">✕</button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">No tasks yet. Add your first one above ↑</div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  async function addTask() {
+    const title = document.getElementById('taskTitle').value.trim();
+    const desc = document.getElementById('taskDesc').value.trim();
+    if (!title) return;
+    const res = await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, description: desc })
+    });
+    if (res.ok) location.reload();
+  }
+
+  async function completeTask(id) {
+    await fetch(`/api/tasks/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'done' })
+    });
+    location.reload();
+  }
+
+  async function deleteTask(id) {
+    await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+    document.getElementById(`task-${id}`).remove();
+  }
+
+  document.getElementById('taskTitle').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTask();
+  });
+</script>
+</body>
+</html>
